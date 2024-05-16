@@ -111,9 +111,9 @@ metadata:
       size: 100
       timeout: 20
   indexers:
-    ghostnet:
+    basenet:
       datasources:
-        tzkt: tzkt_ghostnet
+        tzkt: tzkt_basenet
 
 
 
@@ -141,7 +141,7 @@ prometheus:
   url: ${EXPORT_HOST:-0.0.0.0}:2112
 
 datasources:
-  tzkt_ghostnet:
-    url: https://api.ghostnet.tzkt.io
+  tzkt_basenet:
+    url: https://api.basenet.tzkt.io
     kind: tzkt
     timeout: 10

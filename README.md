@@ -5,7 +5,7 @@
 [![Made With](https://img.shields.io/badge/made%20with-dipdup-blue.svg?)](https://dipdup.net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Selective Tezos metadata indexer based on DipDup framework.  
+Selective Mavryk metadata indexer based on DipDup framework.  
 Supported features:
 - [TZIP-16](https://gitlab.com/tzip/tzip/-/blob/master/proposals/tzip-16/tzip-16.md) contract metadata
 - [TZIP-12](https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md#token-metadata) token metadata

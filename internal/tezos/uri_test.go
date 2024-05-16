@@ -20,7 +20,7 @@ func TestTezosStorageURI_Parse(t *testing.T) {
 	}{
 		{
 			name:  "test 1",
-			value: "tezos-storage:hello",
+			value: "mavryk-storage:hello",
 			fields: fields{
 				Address: "",
 				Network: "",
@@ -28,7 +28,7 @@ func TestTezosStorageURI_Parse(t *testing.T) {
 			},
 		}, {
 			name:  "test 2",
-			value: "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX/foo",
+			value: "mavryk-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX/foo",
 			fields: fields{
 				Address: "KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX",
 				Network: "",
@@ -36,7 +36,7 @@ func TestTezosStorageURI_Parse(t *testing.T) {
 			},
 		}, {
 			name:  "test 3",
-			value: "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX/%2Ffoo",
+			value: "mavryk-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX/%2Ffoo",
 			fields: fields{
 				Address: "KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX",
 				Network: "",
@@ -44,7 +44,7 @@ func TestTezosStorageURI_Parse(t *testing.T) {
 			},
 		}, {
 			name:  "test 4",
-			value: "tezos-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX.mainnet/%2Ffoo",
+			value: "mavryk-storage://KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX.mainnet/%2Ffoo",
 			fields: fields{
 				Address: "KT1QDFEu8JijYbsJqzoXq7mKvfaQQamHD1kX",
 				Network: "mainnet",
@@ -52,7 +52,7 @@ func TestTezosStorageURI_Parse(t *testing.T) {
 			},
 		}, {
 			name:  "test 5",
-			value: "tezos-storage:metadata",
+			value: "mavryk-storage:metadata",
 			fields: fields{
 				Address: "",
 				Network: "",

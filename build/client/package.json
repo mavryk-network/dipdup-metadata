@@ -1,7 +1,7 @@
 {
     "name": "@dipdup/metadata",
     "version": "0.1.0",
-    "description": "GQL client for Tezos contract & token metadata API",
+    "description": "GQL client for Mavryk contract & token metadata API",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
     "types": "dist/index.d.ts",

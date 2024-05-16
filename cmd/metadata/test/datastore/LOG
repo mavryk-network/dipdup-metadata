@@ -1,0 +1,32 @@
+=============== May 16, 2024 (CEST) ===============
+11:45:17.171474 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+11:45:17.174540 db@open opening
+11:45:17.174691 version@stat F·[] S·0B[] Sc·[]
+11:45:17.175663 db@janitor F·2 G·0
+11:45:17.175683 db@open done T·1.117822ms
+11:48:40.862364 db@close closing
+11:48:40.862435 db@close done T·55.105µs
+=============== May 16, 2024 (CEST) ===============
+11:49:43.271301 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+11:49:43.271363 version@stat F·[] S·0B[] Sc·[]
+11:49:43.271380 db@open opening
+11:49:43.271406 journal@recovery F·1
+11:49:43.272001 journal@recovery recovering @1
+11:49:43.273739 memdb@flush created L0@2 N·2 S·17KiB "/lo..ers,v1":"/pr..7WI,v2"
+11:49:43.273853 version@stat F·[1] S·17KiB[17KiB] Sc·[0.25]
+11:49:43.278388 db@janitor F·3 G·0
+11:49:43.278406 db@open done T·7.021658ms
+11:50:32.727970 db@close closing
+11:50:32.728047 db@close done T·61.688µs
+=============== May 16, 2024 (CEST) ===============
+12:03:37.913049 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:03:37.913114 version@stat F·[1] S·17KiB[17KiB] Sc·[0.25]
+12:03:37.913137 db@open opening
+12:03:37.913153 journal@recovery F·1
+12:03:37.913324 journal@recovery recovering @3
+12:03:37.915583 memdb@flush created L0@5 N·1 S·9KiB "/lo..ers,v4":"/lo..ers,v4"
+12:03:37.915846 version@stat F·[2] S·26KiB[26KiB] Sc·[0.50]
+12:03:37.920004 db@janitor F·4 G·0
+12:03:37.920014 db@open done T·6.872493ms
+12:04:20.577678 db@close closing
+12:04:20.577769 db@close done T·75.616µs

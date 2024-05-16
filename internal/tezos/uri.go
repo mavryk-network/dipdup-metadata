@@ -16,11 +16,11 @@ type URI struct {
 
 // Parse -
 func (uri *URI) Parse(value string) (err error) {
-	if !strings.HasPrefix(value, PrefixTezosStorage) {
-		return errors.Wrap(ErrInvalidTezosStoragePrefix, value)
+	if !strings.HasPrefix(value, PrefixMavrykStorage) {
+		return errors.Wrap(ErrInvalidMavrykStoragePrefix, value)
 	}
 
-	uri.Key = strings.TrimPrefix(value, PrefixTezosStorage)
+	uri.Key = strings.TrimPrefix(value, PrefixMavrykStorage)
 	if strings.HasPrefix(uri.Key, "//") {
 		uri.Key = strings.TrimPrefix(uri.Key, "//")
 		parts := strings.Split(uri.Key, "/")
@@ -50,5 +50,5 @@ func (uri *URI) parseHost(host string) {
 }
 
 func isAddress(str string) bool {
-	return len(str) == 36 && (strings.HasPrefix(str, "KT") || strings.HasPrefix(str, "tz1") || strings.HasPrefix(str, "tz2") || strings.HasPrefix(str, "tz3"))
+	return len(str) == 36 && (strings.HasPrefix(str, "KT") || strings.HasPrefix(str, "mv1") || strings.HasPrefix(str, "mv2") || strings.HasPrefix(str, "mv3"))
 }

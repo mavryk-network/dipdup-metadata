@@ -4,10 +4,10 @@ import "strings"
 
 // prefixes
 const (
-	PrefixTezosStorage = "tezos-storage:"
+	PrefixMavrykStorage = "mavryk-storage:"
 )
 
 // Is -
 func Is(link string) bool {
-	return strings.HasPrefix(link, PrefixTezosStorage)
+	return strings.HasPrefix(link, PrefixMavrykStorage)
 }

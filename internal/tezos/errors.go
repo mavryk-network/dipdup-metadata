@@ -4,5 +4,5 @@ import "errors"
 
 // Errors
 var (
-	ErrInvalidTezosStoragePrefix = errors.New("invalid tezos storage prefix")
+	ErrInvalidMavrykStoragePrefix = errors.New("invalid mavryk storage prefix")
 )
