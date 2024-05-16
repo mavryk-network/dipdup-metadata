@@ -3,7 +3,7 @@ version: 0.0.1
 metadata:
   settings:
     ipfs:
-      dir: test
+      dir: /etc/metadata/ipfs
       bootstrap:
         - /dnsaddr/ipfs.infura.io/tcp/5001/https
       blacklist:
