@@ -43,7 +43,7 @@ metadata:
       size: 100
       timeout: 20
   indexers:
-    atlasnet:
+    ghostnet:
       datasources:
         tzkt: mvkt_atlasnet
 

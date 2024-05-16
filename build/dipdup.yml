@@ -164,7 +164,7 @@ metadata:
     # mainnet:
     #   datasources:
     #     tzkt: mvkt_mainnet
-    atlasnet:
+    oxfordnet:
       datasources:
         tzkt: mvkt_atlasnet
     # ghostnet:
