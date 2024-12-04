@@ -48,7 +48,7 @@ metadata:
   indexers:
     mainnet:
       datasources:
-          tzkt: tzkt_mainnet
+          mvkt: mvkt_mainnet
 
 database:
   kind: postgres
@@ -69,7 +69,7 @@ prometheus:
   url: ${EXPORT_HOST:-0.0.0.0}:2112
 
 datasources:
-  tzkt_mainnet:
+  mvkt_mainnet:
     url: https://api.tzkt.io
-    kind: tzkt
+    kind: mvkt
     timeout: 10  

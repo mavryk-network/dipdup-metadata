@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dipdup-net/metadata/internal/ipfs"
+	"github.com/mavryk-network/dipdup-metadata/internal/ipfs"
 	"github.com/pkg/errors"
 
 	shell "github.com/ipfs/go-ipfs-api"

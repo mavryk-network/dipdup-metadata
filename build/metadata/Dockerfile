@@ -10,16 +10,16 @@ ENV GOOS=linux
 RUN apk --no-cache add ca-certificates
 RUN apk add --update git musl-dev gcc build-base
 
-RUN mkdir -p $GOPATH/src/github.com/dipdup-net/metadata/
+RUN mkdir -p $GOPATH/src/github.com/mavryk-network/dipdup-metadata/
 
-COPY ./go.* $GOPATH/src/github.com/dipdup-net/metadata/
-WORKDIR $GOPATH/src/github.com/dipdup-net/metadata
+COPY ./go.* $GOPATH/src/github.com/mavryk-network/dipdup-metadata/
+WORKDIR $GOPATH/src/github.com/mavryk-network/dipdup-metadata
 RUN go mod download
 
 COPY cmd/metadata cmd/metadata
 COPY internal internal
 
-WORKDIR $GOPATH/src/github.com/dipdup-net/metadata/cmd/metadata/
+WORKDIR $GOPATH/src/github.com/mavryk-network/dipdup-metadata/cmd/metadata/
 RUN go build -a -o /go/bin/dipdup-metadata .
 
 # ---------------------------------------------------------------------

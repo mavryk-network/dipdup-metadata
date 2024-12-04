@@ -1,4 +1,4 @@
-package tezos
+package mavryk
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTezosStorageURI_Parse(t *testing.T) {
+func TestMavrykStorageURI_Parse(t *testing.T) {
 	type fields struct {
 		Address string
 		Network string
@@ -64,7 +64,7 @@ func TestTezosStorageURI_Parse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			uri := &URI{}
 			if err := uri.Parse(tt.value); (err != nil) != tt.wantErr {
-				t.Errorf("TezosStorageURI.Parse() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("MavrykStorageURI.Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !assert.Equal(t, tt.fields.Address, uri.Address) {

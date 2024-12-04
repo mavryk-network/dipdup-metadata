@@ -45,7 +45,7 @@ metadata:
   indexers:
     ghostnet:
       datasources:
-        tzkt: mvkt_atlasnet
+        mvkt: mvkt_atlasnet
 
 database:
   kind: postgres
@@ -73,5 +73,5 @@ prometheus:
 datasources:
   mvkt_atlasnet:
     url: https://atlasnet.api.mavryk.network
-    kind: tzkt
+    kind: mvkt
     timeout: 10  

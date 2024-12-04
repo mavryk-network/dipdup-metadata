@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/dipdup-net/metadata/cmd/metadata/config"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/config"
 	"github.com/pkg/errors"
 )
 

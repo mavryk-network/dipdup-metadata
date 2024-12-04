@@ -8,12 +8,12 @@
     "typings": "dist/index.d.ts",
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/dipdup-net/metadata.git"
+      "url": "git+https://github.com/mavryk-network/dipdup-metadata.git"
     },
     "author": "GenQL <genql.vercel.app>",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/dipdup-net/metadata/issues"
+      "url": "https://github.com/mavryk-network/dipdup-metadata/issues"
     },
     "homepage": "https://dipdup.net/sandbox.html?service=metadata",
     "devDependencies": {

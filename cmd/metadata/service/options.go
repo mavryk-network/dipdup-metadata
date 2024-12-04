@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/dipdup-net/metadata/cmd/metadata/models"
-	"github.com/dipdup-net/metadata/cmd/metadata/prometheus"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/models"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/prometheus"
 )
 
 // ServiceOption -

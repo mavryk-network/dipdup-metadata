@@ -5,7 +5,7 @@ import (
 
 	golibConfig "github.com/dipdup-net/go-lib/config"
 	"github.com/dipdup-net/go-lib/prometheus"
-	"github.com/dipdup-net/metadata/cmd/metadata/resolver"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/resolver"
 )
 
 // metric names

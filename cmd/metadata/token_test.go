@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	api "github.com/dipdup-net/go-lib/tzkt/data"
-	"github.com/dipdup-net/metadata/cmd/metadata/models"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/models"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )

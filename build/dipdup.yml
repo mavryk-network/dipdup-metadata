@@ -163,19 +163,19 @@ metadata:
   indexers:
     # mainnet:
     #   datasources:
-    #     tzkt: mvkt_mainnet
+    #     mvkt: mvkt_mainnet
     oxfordnet:
       datasources:
-        tzkt: mvkt_atlasnet
+        mvkt: mvkt_atlasnet
     # ghostnet:
     #   datasources:
-    #     tzkt: mvkt_ghostnet
+    #     mvkt: mvkt_ghostnet
     # oxfordnet:
     #   datasources:
-    #     tzkt: mvkt_oxfordnet
+    #     mvkt: mvkt_oxfordnet
     # parisnet:
     #   datasources:
-    #     tzkt: mvkt_parisnet
+    #     mvkt: mvkt_parisnet
 
 database:
   kind: postgres
@@ -203,21 +203,21 @@ prometheus:
 datasources:
   # mvkt_mainnet:
   #   url: https://api.tzkt.io
-  #   kind: tzkt
+  #   kind: mvkt
   #   timeout: 10
   mvkt_atlasnet:
     url: https://atlasnet.api.mavryk.network
-    kind: tzkt
+    kind: mvkt
     timeout: 10
   # mvkt_ghostnet:
   #   url: https://api.ghostnet.tzkt.io
-  #   kind: tzkt
+  #   kind: mvkt
   #   timeout: 10
   # mvkt_oxfordnet:
   #   url: https://api.oxfordnet.tzkt.io
-  #   kind: tzkt
+  #   kind: mvkt
   #   timeout: 10
   # mvkt_parisnet:
   #   url: https://api.parisnet.tzkt.io
-  #   kind: tzkt
+  #   kind: mvkt
   #   timeout: 10

@@ -1,4 +1,4 @@
-package tezos
+package mavryk
 
 import (
 	"net/url"

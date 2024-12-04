@@ -5,11 +5,11 @@ import (
 	"context"
 	stdJSON "encoding/json"
 
-	"github.com/dipdup-net/metadata/cmd/metadata/config"
-	"github.com/dipdup-net/metadata/cmd/metadata/tezoskeys"
-	"github.com/dipdup-net/metadata/internal/ipfs"
-	"github.com/dipdup-net/metadata/internal/tezos"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/config"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/mavrykkeys"
+	"github.com/mavryk-network/dipdup-metadata/internal/ipfs"
+	"github.com/mavryk-network/dipdup-metadata/internal/mavryk"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +22,7 @@ type ResolverType int
 const (
 	ResolverTypeIPFS ResolverType = iota + 1
 	ResolverTypeHTTP
-	ResolverTypeTezos
+	ResolverTypeMavryk
 	ResolverTypeSha256
 )
 
@@ -30,15 +30,15 @@ const (
 type ErrorType string
 
 const (
-	ErrorTypeHttpRequest     ErrorType = "http_request"
-	ErrorTypeTooBig          ErrorType = "too_big"
-	ErrorTypeReceiving       ErrorType = "receiving"
-	ErrorTypeKeyTezosNotFond ErrorType = "tezos_key_not_found"
-	ErrorTypeTezosURIParsing ErrorType = "tezos_uri_parsing"
-	ErrorTypeInvalidJSON     ErrorType = "invalid_json"
-	ErrorInvalidHTTPURI      ErrorType = "invalid_http_uri"
-	ErrorInvalidCID          ErrorType = "invalid_ipfs_cid"
-	ErrorUnknownStorageType  ErrorType = "unknown_storage_type"
+	ErrorTypeHttpRequest      ErrorType = "http_request"
+	ErrorTypeTooBig           ErrorType = "too_big"
+	ErrorTypeReceiving        ErrorType = "receiving"
+	ErrorTypeKeyMavrykNotFond ErrorType = "mavryk_key_not_found"
+	ErrorTypeMavrykURIParsing ErrorType = "mavryk_uri_parsing"
+	ErrorTypeInvalidJSON      ErrorType = "invalid_json"
+	ErrorInvalidHTTPURI       ErrorType = "invalid_http_uri"
+	ErrorInvalidCID           ErrorType = "invalid_ipfs_cid"
+	ErrorUnknownStorageType   ErrorType = "unknown_storage_type"
 )
 
 // ResolvingError -
@@ -74,19 +74,19 @@ type Resolved struct {
 	Node         string
 	Data         []byte
 	ResponseTime int64
-	URI          tezos.URI
+	URI          mavryk.URI
 }
 
 // Receiver -
 type Receiver struct {
-	http  Http
-	ipfs  IpfsNode
-	sha   Sha256
-	tezos TezosStorage
+	http   Http
+	ipfs   IpfsNode
+	sha    Sha256
+	mavryk MavrykStorage
 }
 
 // New -
-func New(ctx context.Context, settings config.Settings, tezosKeys *tezoskeys.TezosKeys, node *ipfs.Node) (Receiver, error) {
+func New(ctx context.Context, settings config.Settings, mavrykKeys *mavrykkeys.MavrykKeys, node *ipfs.Node) (Receiver, error) {
 	ipfs, err := NewIPFSNode(node,
 		WithTimeoutIpfsNode(settings.IPFS.Timeout),
 	)
@@ -95,10 +95,10 @@ func New(ctx context.Context, settings config.Settings, tezosKeys *tezoskeys.Tez
 	}
 
 	return Receiver{
-		ipfs:  ipfs,
-		tezos: NewTezosStorage(tezosKeys),
-		http:  NewHttp(WithTimeoutHttp(settings.HTTPTimeout)),
-		sha:   NewSha256(WithTimeoutSha256(settings.HTTPTimeout)),
+		ipfs:   ipfs,
+		mavryk: NewMavrykStorage(mavrykKeys),
+		http:   NewHttp(WithTimeoutHttp(settings.HTTPTimeout)),
+		sha:    NewSha256(WithTimeoutSha256(settings.HTTPTimeout)),
 	}, nil
 }
 
@@ -123,9 +123,9 @@ func (r Receiver) Resolve(ctx context.Context, network, address, link string, at
 		resolved.Node = data.Node
 		resolved.ResponseTime = data.ResponseTime
 
-	case r.tezos.Is(link):
-		resolved.By = ResolverTypeTezos
-		data, err := r.tezos.Resolve(ctx, network, address, link)
+	case r.mavryk.Is(link):
+		resolved.By = ResolverTypeMavryk
+		data, err := r.mavryk.Resolve(ctx, network, address, link)
 		if err != nil {
 			return resolved, err
 		}

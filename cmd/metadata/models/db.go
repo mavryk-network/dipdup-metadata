@@ -26,9 +26,9 @@ func IndexName(network string) string {
 type Database struct {
 	*database.PgGo
 
-	Tokens    ModelRepository[*TokenMetadata]
-	Contracts ModelRepository[*ContractMetadata]
-	TezosKeys *TezosKeys
+	Tokens     ModelRepository[*TokenMetadata]
+	Contracts  ModelRepository[*ContractMetadata]
+	MavrykKeys *MavrykKeys
 }
 
 // NewDatabase -
@@ -41,7 +41,7 @@ func NewDatabase(ctx context.Context, cfg config.Database) (*Database, error) {
 	database.Wait(ctx, db, 5*time.Second)
 
 	for _, data := range []any{
-		&database.State{}, &ContractMetadata{}, &TokenMetadata{}, &TezosKey{},
+		&database.State{}, &ContractMetadata{}, &TokenMetadata{}, &MavrykKey{},
 	} {
 		if err := db.DB().WithContext(ctx).Model(data).CreateTable(&orm.CreateTableOptions{
 			IfNotExists: true,
@@ -55,10 +55,10 @@ func NewDatabase(ctx context.Context, cfg config.Database) (*Database, error) {
 	db.DB().AddQueryHook(&dbLogger{})
 
 	return &Database{
-		PgGo:      db,
-		Tokens:    NewTokens(db),
-		Contracts: NewContracts(db),
-		TezosKeys: NewTezosKeys(db),
+		PgGo:       db,
+		Tokens:     NewTokens(db),
+		Contracts:  NewContracts(db),
+		MavrykKeys: NewMavrykKeys(db),
 	}, nil
 }
 
@@ -132,7 +132,7 @@ func (db *Database) CreateIndices() error {
 		return err
 	}
 	if _, err := db.DB().Exec(`
-		CREATE INDEX CONCURRENTLY IF NOT EXISTS tezos_key_idx ON tezos_keys (network, address, key)
+		CREATE INDEX CONCURRENTLY IF NOT EXISTS mavryk_key_idx ON mavryk_keys (network, address, key)
 	`); err != nil {
 		return err
 	}

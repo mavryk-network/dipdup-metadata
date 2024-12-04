@@ -113,7 +113,7 @@ metadata:
   indexers:
     basenet:
       datasources:
-        tzkt: tzkt_basenet
+        mvkt: mvkt_basenet
 
 
 
@@ -141,7 +141,7 @@ prometheus:
   url: ${EXPORT_HOST:-0.0.0.0}:2112
 
 datasources:
-  tzkt_basenet:
+  mvkt_basenet:
     url: https://api.basenet.tzkt.io
-    kind: tzkt
+    kind: mvkt
     timeout: 10

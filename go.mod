@@ -1,4 +1,4 @@
-module github.com/dipdup-net/metadata
+module github.com/mavryk-network/dipdup-metadata
 
 go 1.19
 

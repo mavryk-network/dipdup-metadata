@@ -17,10 +17,10 @@ import (
 
 	golibConfig "github.com/dipdup-net/go-lib/config"
 	"github.com/dipdup-net/go-lib/hasura"
-	"github.com/dipdup-net/metadata/cmd/metadata/config"
-	"github.com/dipdup-net/metadata/cmd/metadata/models"
-	"github.com/dipdup-net/metadata/cmd/metadata/prometheus"
-	"github.com/dipdup-net/metadata/internal/ipfs"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/config"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/models"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/prometheus"
+	"github.com/mavryk-network/dipdup-metadata/internal/ipfs"
 )
 
 type startResult struct {

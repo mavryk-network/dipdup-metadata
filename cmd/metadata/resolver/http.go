@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dipdup-net/metadata/cmd/metadata/helpers"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/helpers"
 	"github.com/pkg/errors"
 )
 

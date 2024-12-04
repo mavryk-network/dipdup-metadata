@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/dipdup-net/go-lib/config"
-	"github.com/dipdup-net/metadata/internal/ipfs"
+	"github.com/mavryk-network/dipdup-metadata/internal/ipfs"
 	"github.com/pkg/errors"
 )
 
@@ -41,11 +41,11 @@ func substituteContracts(c *Config, filters *Filters) error {
 }
 
 func substituteDataSources(c *Config, dataSource *MetadataDataSource) error {
-	if source, ok := c.DataSources[dataSource.Tzkt.Name()]; ok {
-		if source.Kind != "tzkt" {
-			return errors.Errorf("Invalid tzkt data source kind. Expected `tzkt`, got `%s`", source.Kind)
+	if source, ok := c.DataSources[dataSource.Mvkt.Name()]; ok {
+		if source.Kind != "mvkt" {
+			return errors.Errorf("Invalid mvkt data source kind. Expected `mvkt`, got `%s`", source.Kind)
 		}
-		dataSource.Tzkt.SetStruct(source)
+		dataSource.Mvkt.SetStruct(source)
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func (f Filters) Addresses() []string {
 
 // MetadataDataSource -
 type MetadataDataSource struct {
-	Tzkt config.Alias[config.DataSource] `yaml:"tzkt" validate:"url"`
+	Mvkt config.Alias[config.DataSource] `yaml:"mvkt" validate:"url"`
 }
 
 // Settings -

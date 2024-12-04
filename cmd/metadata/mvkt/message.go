@@ -1,4 +1,4 @@
-package tzkt
+package mvkt
 
 import (
 	api "github.com/dipdup-net/go-lib/tzkt/data"

@@ -3,7 +3,7 @@ package thumbnail
 import (
 	"time"
 
-	"github.com/dipdup-net/metadata/cmd/metadata/prometheus"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/prometheus"
 )
 
 // ThumbnailOption -

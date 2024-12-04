@@ -6,9 +6,9 @@ import (
 	"unicode/utf8"
 
 	api "github.com/dipdup-net/go-lib/tzkt/data"
-	"github.com/dipdup-net/metadata/cmd/metadata/helpers"
-	"github.com/dipdup-net/metadata/cmd/metadata/models"
-	"github.com/dipdup-net/metadata/cmd/metadata/resolver"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/helpers"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/models"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/resolver"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +17,7 @@ func (indexer *Indexer) processContractMetadata(update api.BigMapUpdate) (*model
 		return nil, nil
 	}
 	if update.Content.Hash != emptyHash {
-		return nil, indexer.tezosKeys.Add(update, indexer.network)
+		return nil, indexer.mavrykKeys.Add(update, indexer.network)
 	}
 
 	link, err := helpers.Decode(update.Content.Value)

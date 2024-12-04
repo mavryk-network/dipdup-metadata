@@ -13,35 +13,35 @@ import (
 
 	generalConfig "github.com/dipdup-net/go-lib/config"
 	"github.com/dipdup-net/go-lib/database"
-	"github.com/dipdup-net/metadata/cmd/metadata/config"
-	"github.com/dipdup-net/metadata/cmd/metadata/models"
-	"github.com/dipdup-net/metadata/cmd/metadata/prometheus"
-	"github.com/dipdup-net/metadata/cmd/metadata/resolver"
-	"github.com/dipdup-net/metadata/cmd/metadata/service"
-	"github.com/dipdup-net/metadata/cmd/metadata/storage"
-	"github.com/dipdup-net/metadata/cmd/metadata/tezoskeys"
-	"github.com/dipdup-net/metadata/cmd/metadata/thumbnail"
-	"github.com/dipdup-net/metadata/cmd/metadata/tzkt"
-	"github.com/dipdup-net/metadata/internal/ipfs"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/config"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/mavrykkeys"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/models"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/mvkt"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/prometheus"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/resolver"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/service"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/storage"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/thumbnail"
+	"github.com/mavryk-network/dipdup-metadata/internal/ipfs"
 )
 
 var createIndex sync.Once
 
 // Indexer -
 type Indexer struct {
-	network   string
-	indexName string
-	state     *database.State
-	resolver  resolver.Receiver
-	db        *models.Database
-	scanner   *tzkt.Scanner
-	prom      *prometheus.Prometheus
-	tezosKeys *tezoskeys.TezosKeys
-	contracts *service.Service[*models.ContractMetadata]
-	tokens    *service.Service[*models.TokenMetadata]
-	thumbnail *thumbnail.Service
-	settings  config.Settings
-	filters   config.Filters
+	network    string
+	indexName  string
+	state      *database.State
+	resolver   resolver.Receiver
+	db         *models.Database
+	scanner    *mvkt.Scanner
+	prom       *prometheus.Prometheus
+	mavrykKeys *mavrykkeys.MavrykKeys
+	contracts  *service.Service[*models.ContractMetadata]
+	tokens     *service.Service[*models.TokenMetadata]
+	thumbnail  *thumbnail.Service
+	settings   config.Settings
+	filters    config.Filters
 
 	wg *sync.WaitGroup
 }
@@ -52,28 +52,28 @@ func NewIndexer(ctx context.Context, network string, indexerConfig *config.Index
 	if err != nil {
 		return nil, err
 	}
-	keys := tezoskeys.NewTezosKeys(db.TezosKeys)
+	keys := mavrykkeys.NewMavrykKeys(db.MavrykKeys)
 
 	metadataResolver, err := resolver.New(ctx, settings, keys, node)
 	if err != nil {
 		return nil, err
 	}
-	scanner, err := tzkt.New(indexerConfig.DataSource.Tzkt.Struct(), filters.Addresses()...)
+	scanner, err := mvkt.New(indexerConfig.DataSource.Mvkt.Struct(), filters.Addresses()...)
 	if err != nil {
 		return nil, err
 	}
 
 	indexer := &Indexer{
-		scanner:   scanner,
-		network:   network,
-		indexName: models.IndexName(network),
-		resolver:  metadataResolver,
-		settings:  settings,
-		tezosKeys: keys,
-		db:        db,
-		prom:      prom,
-		filters:   filters,
-		wg:        new(sync.WaitGroup),
+		scanner:    scanner,
+		network:    network,
+		indexName:  models.IndexName(network),
+		resolver:   metadataResolver,
+		settings:   settings,
+		mavrykKeys: keys,
+		db:         db,
+		prom:       prom,
+		filters:    filters,
+		wg:         new(sync.WaitGroup),
 	}
 
 	if aws := storage.NewAWS(settings.AWS); aws != nil {
@@ -259,7 +259,7 @@ func (indexer *Indexer) listen(ctx context.Context) {
 	}
 }
 
-func (indexer *Indexer) handlerUpdate(ctx context.Context, msg tzkt.Message) error {
+func (indexer *Indexer) handlerUpdate(ctx context.Context, msg mvkt.Message) error {
 	tokens := make([]*models.TokenMetadata, 0)
 	contracts := make([]*models.ContractMetadata, 0)
 	for i := range msg.Body {

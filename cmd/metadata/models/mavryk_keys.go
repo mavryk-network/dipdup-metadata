@@ -3,7 +3,7 @@ package models
 import (
 	"github.com/dipdup-net/go-lib/database"
 	"github.com/dipdup-net/go-lib/tzkt/data"
-	"github.com/dipdup-net/metadata/cmd/metadata/helpers"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/helpers"
 )
 
 // Action -
@@ -16,26 +16,26 @@ const (
 	ActionUpdate Action = "update"
 )
 
-// TezosKey -
-type TezosKey struct {
+// MavrykKey -
+type MavrykKey struct {
 	//nolint
-	tableName struct{} `pg:"tezos_keys"`
+	tableName struct{} `pg:"mavryk_keys"`
 
 	ID      uint64 `json:"-"  pg:",notnull"`
-	Network string `pg:",unique:tezos_key"`
-	Address string `pg:",unique:tezos_key"`
-	Key     string `pg:",unique:tezos_key"`
+	Network string `pg:",unique:mavryk_key"`
+	Address string `pg:",unique:mavryk_key"`
+	Key     string `pg:",unique:mavryk_key"`
 	Value   []byte
 }
 
 // TableName -
-func (TezosKey) TableName() string {
-	return "tezos_keys"
+func (MavrykKey) TableName() string {
+	return "mavryk_keys"
 }
 
 // ContextFromUpdate -
-func ContextFromUpdate(update data.BigMapUpdate, network string) (TezosKey, error) {
-	var ctx TezosKey
+func ContextFromUpdate(update data.BigMapUpdate, network string) (MavrykKey, error) {
+	var ctx MavrykKey
 	ctx.Address = update.Contract.Address
 	ctx.Network = network
 	ctx.Key = helpers.Trim(string(update.Content.Key))
@@ -48,18 +48,18 @@ func ContextFromUpdate(update data.BigMapUpdate, network string) (TezosKey, erro
 	return ctx, nil
 }
 
-// TezosKeys -
-type TezosKeys struct {
+// MavrykKeys -
+type MavrykKeys struct {
 	db *database.PgGo
 }
 
-// NewTezosKeys -
-func NewTezosKeys(db *database.PgGo) *TezosKeys {
-	return &TezosKeys{db}
+// NewMavrykKeys -
+func NewMavrykKeys(db *database.PgGo) *MavrykKeys {
+	return &MavrykKeys{db}
 }
 
 // Get -
-func (keys *TezosKeys) Get(network, address, key string) (tk TezosKey, err error) {
+func (keys *MavrykKeys) Get(network, address, key string) (tk MavrykKey, err error) {
 	query := keys.db.DB().Model(&tk)
 
 	if network != "" {
@@ -77,13 +77,13 @@ func (keys *TezosKeys) Get(network, address, key string) (tk TezosKey, err error
 }
 
 // Save -
-func (keys *TezosKeys) Save(tk TezosKey) error {
+func (keys *MavrykKeys) Save(tk MavrykKey) error {
 	_, err := keys.db.DB().Model(&tk).OnConflict("(network, address, key) DO UPDATE").Set("value = excluded.value").Insert()
 	return err
 }
 
 // Delete -
-func (keys *TezosKeys) Delete(tk TezosKey) error {
+func (keys *MavrykKeys) Delete(tk MavrykKey) error {
 	query := keys.db.DB().Model(&tk)
 
 	if tk.Network != "" {

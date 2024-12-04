@@ -14,11 +14,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dipdup-net/metadata/cmd/metadata/models"
-	"github.com/dipdup-net/metadata/cmd/metadata/prometheus"
-	"github.com/dipdup-net/metadata/cmd/metadata/storage"
-	"github.com/dipdup-net/metadata/internal/ipfs"
 	"github.com/disintegration/imaging"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/models"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/prometheus"
+	"github.com/mavryk-network/dipdup-metadata/cmd/metadata/storage"
+	"github.com/mavryk-network/dipdup-metadata/internal/ipfs"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
