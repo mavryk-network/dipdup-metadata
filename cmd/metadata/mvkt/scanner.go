@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dipdup-net/go-lib/config"
-	"github.com/dipdup-net/go-lib/tzkt/api"
 	"github.com/dipdup-net/go-lib/tzkt/data"
 	"github.com/dipdup-net/go-lib/tzkt/events"
 	"github.com/pkg/errors"
@@ -27,7 +26,6 @@ const (
 
 // Scanner -
 type Scanner struct {
-	api       *api.API
 	client    *events.TzKT
 	wsURL     string
 	baseURL   string
@@ -52,7 +50,6 @@ func New(cfg config.DataSource, contracts ...string) (*Scanner, error) {
 	return &Scanner{
 		wsURL:     eventsURL.String(),
 		baseURL:   baseURL.String(),
-		api:       api.New(baseURL.String()),
 		msg:       newMessage(),
 		contracts: contracts,
 		diffs:     make(chan Message, 1024),
@@ -357,25 +354,47 @@ func (scanner *Scanner) sync(ctx context.Context, headLevel uint64) error {
 }
 
 func (scanner *Scanner) getSyncUpdates(ctx context.Context, headLevel uint64) ([]data.BigMapUpdate, error) {
-	filters := map[string]string{
-		"path.as":   "*metadata",
-		"action.in": "add_key,update_key",
-		"limit":     fmt.Sprintf("%d", pageSize),
-		"level.le":  fmt.Sprintf("%d", headLevel),
-		"sort.asc":  "id",
+	params := url.Values{
+		"path.as":   {"*metadata"},
+		"action.in": {"add_key,update_key"},
+		"limit":     {fmt.Sprintf("%d", pageSize)},
+		"level.le":  {fmt.Sprintf("%d", headLevel)},
+		"sort.asc":  {"id"},
 	}
 
 	if scanner.lastID == 0 {
-		filters["level.gt"] = fmt.Sprintf("%d", scanner.level)
+		params.Set("level.gt", fmt.Sprintf("%d", scanner.level))
 	} else {
-		filters["offset.cr"] = fmt.Sprintf("%d", scanner.lastID)
+		params.Set("offset.cr", fmt.Sprintf("%d", scanner.lastID))
 	}
 
 	if len(scanner.contracts) > 0 {
-		filters["contract.in"] = strings.Join(scanner.contracts, ",")
+		params.Set("contract.in", strings.Join(scanner.contracts, ","))
 	}
 
-	return scanner.api.GetBigmapUpdates(ctx, filters)
+	reqCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, scanner.baseURL+"/v1/bigmaps/updates?"+params.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bigmaps/updates: %s", resp.Status)
+	}
+
+	var updates []data.BigMapUpdate
+	if err := json.NewDecoder(resp.Body).Decode(&updates); err != nil {
+		return nil, err
+	}
+	return updates, nil
 }
 
 func (scanner *Scanner) processSyncUpdates(ctx context.Context, updates []data.BigMapUpdate) {
