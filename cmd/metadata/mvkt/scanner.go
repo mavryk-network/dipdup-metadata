@@ -2,7 +2,9 @@ package mvkt
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -27,6 +29,7 @@ type Scanner struct {
 	api       *api.API
 	client    *events.TzKT
 	wsURL     string
+	baseURL   string
 	lastID    uint64
 	level     uint64
 	msg       Message
@@ -47,6 +50,7 @@ func New(cfg config.DataSource, contracts ...string) (*Scanner, error) {
 
 	return &Scanner{
 		wsURL:     eventsURL.String(),
+		baseURL:   baseURL.String(),
 		api:       api.New(baseURL.String()),
 		msg:       newMessage(),
 		contracts: contracts,
@@ -86,25 +90,25 @@ func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLeve
 		// Reset cursor for fresh sync cycle
 		scanner.lastID = 0
 
-		head, err := scanner.getHeadWithRetry(ctx)
+		headLevel, err := scanner.headLevelWithRetry(ctx)
 		if err != nil {
 			return // context cancelled
 		}
-		log.Info().Msgf("Current head is %d. Indexer state is %d.", head.Level, scanner.level)
+		log.Info().Msgf("Current head is %d. Indexer state is %d.", headLevel, scanner.level)
 
 		// Catch up to head via REST API
-		for head.Level > scanner.level {
+		for headLevel > scanner.level {
 			select {
 			case <-ctx.Done():
 				return
 			default:
 			}
 
-			if err := scanner.sync(ctx, head.Level); err != nil {
+			if err := scanner.sync(ctx, headLevel); err != nil {
 				log.Err(err).Msg("sync")
 			}
 
-			head, err = scanner.getHeadWithRetry(ctx)
+			headLevel, err = scanner.headLevelWithRetry(ctx)
 			if err != nil {
 				return
 			}
@@ -123,16 +127,39 @@ func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLeve
 	}
 }
 
-func (scanner *Scanner) getHeadWithRetry(ctx context.Context) (data.Head, error) {
+// headLevel fetches only the head level from the API.
+// Uses a local struct to avoid go-lib's data.Head which defines QuoteLevel
+// as uint64, incompatible with the Mavryk API returning -1.
+func (scanner *Scanner) headLevel(ctx context.Context) (uint64, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, scanner.baseURL+"/v1/head", nil)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var head struct {
+		Level uint64 `json:"level"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&head); err != nil {
+		return 0, err
+	}
+	return head.Level, nil
+}
+
+func (scanner *Scanner) headLevelWithRetry(ctx context.Context) (uint64, error) {
 	for {
-		head, err := scanner.api.GetHead(ctx)
+		level, err := scanner.headLevel(ctx)
 		if err == nil {
-			return head, nil
+			return level, nil
 		}
 		log.Err(err).Msg("GetHead, retrying...")
 		select {
 		case <-ctx.Done():
-			return data.Head{}, ctx.Err()
+			return 0, ctx.Err()
 		case <-time.After(reconnectDelay):
 		}
 	}
