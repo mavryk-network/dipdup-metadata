@@ -206,7 +206,7 @@ datasources:
   #   kind: mvkt
   #   timeout: 10
   mvkt_atlasnet:
-    url: https://atlasnet.api.mavryk.network
+    url: ${MVKT_URL:-https://atlasnet.api.mavryk.network}
     kind: mvkt
     timeout: 10
   # mvkt_ghostnet:

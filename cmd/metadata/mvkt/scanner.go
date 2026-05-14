@@ -20,6 +20,7 @@ import (
 
 const (
 	pageSize        = 1000
+	syncLevelRange  = 100000
 	reconnectDelay  = 5 * time.Second
 	watchdogTimeout = 2 * time.Minute
 )
@@ -332,7 +333,13 @@ func (scanner *Scanner) sync(ctx context.Context, headLevel uint64) error {
 				return nil
 			}
 
-			updates, err := scanner.getSyncUpdates(ctx, headLevel)
+			// Cap the query range to avoid API timeouts on large level spans
+			queryLevel := headLevel
+			if queryLevel > scanner.level+syncLevelRange {
+				queryLevel = scanner.level + syncLevelRange
+			}
+
+			updates, err := scanner.getSyncUpdates(ctx, queryLevel)
 			if err != nil {
 				log.Err(err).Msg("getSyncUpdates")
 				time.Sleep(time.Second)
@@ -342,7 +349,8 @@ func (scanner *Scanner) sync(ctx context.Context, headLevel uint64) error {
 			if len(updates) > 0 {
 				scanner.processSyncUpdates(ctx, updates)
 			} else {
-				scanner.level = headLevel
+				scanner.level = queryLevel
+				scanner.lastID = 0
 			}
 		}
 	}
