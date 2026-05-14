@@ -17,13 +17,16 @@ import (
 )
 
 const (
-	pageSize = 1000
+	pageSize        = 1000
+	reconnectDelay  = 5 * time.Second
+	watchdogTimeout = 2 * time.Minute
 )
 
 // Scanner -
 type Scanner struct {
 	api       *api.API
 	client    *events.TzKT
+	wsURL     string
 	lastID    uint64
 	level     uint64
 	msg       Message
@@ -43,7 +46,7 @@ func New(cfg config.DataSource, contracts ...string) (*Scanner, error) {
 	eventsURL := baseURL.JoinPath("v1/ws")
 
 	return &Scanner{
-		client:    events.NewTzKT(eventsURL.String()),
+		wsURL:     eventsURL.String(),
 		api:       api.New(baseURL.String()),
 		msg:       newMessage(),
 		contracts: contracts,
@@ -63,30 +66,8 @@ func (scanner *Scanner) Start(ctx context.Context, startLevel, endLevel uint64) 
 	go scanner.synchronization(ctx, startLevel, endLevel)
 }
 
-func (scanner *Scanner) start(ctx context.Context) {
-	if err := scanner.client.Connect(ctx); err != nil {
-		log.Err(err).Msg("Connect")
-		return
-	}
-
-	if err := scanner.subscribe(); err != nil {
-		log.Err(err).Msg("subscribe")
-		return
-	}
-
-	scanner.wg.Add(1)
-	go scanner.listen(ctx)
-}
-
 func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLevel uint64) {
 	defer scanner.wg.Done()
-
-	head, err := scanner.api.GetHead(ctx)
-	if err != nil {
-		log.Err(err).Msg("GetHead")
-		return
-	}
-	log.Info().Msgf("Current TzKT head is %d. Indexer state is %d.", head.Level, startLevel)
 
 	scanner.level = startLevel
 
@@ -95,23 +76,116 @@ func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLeve
 		case <-ctx.Done():
 			return
 		default:
-			if endLevel > 0 && scanner.level > endLevel {
-				log.Warn().Msgf("synchronization was stopped due to last_level in config is equal to current level")
+		}
+
+		if endLevel > 0 && scanner.level > endLevel {
+			log.Warn().Msgf("synchronization was stopped due to last_level in config is equal to current level")
+			return
+		}
+
+		// Reset cursor for fresh sync cycle
+		scanner.lastID = 0
+
+		head, err := scanner.getHeadWithRetry(ctx)
+		if err != nil {
+			return // context cancelled
+		}
+		log.Info().Msgf("Current head is %d. Indexer state is %d.", head.Level, scanner.level)
+
+		// Catch up to head via REST API
+		for head.Level > scanner.level {
+			select {
+			case <-ctx.Done():
 				return
-			}
-			if head.Level <= scanner.level {
-				scanner.start(ctx)
-				return
+			default:
 			}
 
 			if err := scanner.sync(ctx, head.Level); err != nil {
 				log.Err(err).Msg("sync")
 			}
 
-			head, err = scanner.api.GetHead(ctx)
+			head, err = scanner.getHeadWithRetry(ctx)
 			if err != nil {
-				log.Err(err).Msg("GetHead")
+				return
 			}
+		}
+
+		// Start WebSocket listener — blocks until connection is lost
+		scanner.start(ctx)
+
+		// Listener stopped — wait then loop back to re-sync
+		log.Warn().Msg("WebSocket connection lost, will re-sync and reconnect...")
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(reconnectDelay):
+		}
+	}
+}
+
+func (scanner *Scanner) getHeadWithRetry(ctx context.Context) (data.Head, error) {
+	for {
+		head, err := scanner.api.GetHead(ctx)
+		if err == nil {
+			return head, nil
+		}
+		log.Err(err).Msg("GetHead, retrying...")
+		select {
+		case <-ctx.Done():
+			return data.Head{}, ctx.Err()
+		case <-time.After(reconnectDelay):
+		}
+	}
+}
+
+func (scanner *Scanner) start(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		client := events.NewTzKT(scanner.wsURL)
+		if err := client.Connect(ctx); err != nil {
+			log.Err(err).Msg("Connect, retrying...")
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(reconnectDelay):
+				continue
+			}
+		}
+
+		scanner.client = client
+		if err := scanner.subscribe(); err != nil {
+			log.Err(err).Msg("subscribe, retrying...")
+			if client.IsConnected() {
+				client.Close()
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(reconnectDelay):
+				continue
+			}
+		}
+
+		log.Info().Msg("WebSocket connected and subscribed")
+
+		// Block until the listener returns (connection lost or context cancelled)
+		scanner.listen(ctx)
+
+		// Clean up the old connection before reconnecting
+		if scanner.client.IsConnected() {
+			scanner.client.Close()
+		}
+
+		log.Warn().Msg("WebSocket listener stopped, reconnecting...")
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(reconnectDelay):
 		}
 	}
 }
@@ -120,7 +194,7 @@ func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLeve
 func (scanner *Scanner) Close() error {
 	scanner.wg.Wait()
 
-	if scanner.client.IsConnected() {
+	if scanner.client != nil && scanner.client.IsConnected() {
 		if err := scanner.client.Close(); err != nil {
 			return err
 		}
@@ -162,13 +236,23 @@ func (scanner *Scanner) subscribe() error {
 }
 
 func (scanner *Scanner) listen(ctx context.Context) {
-	defer scanner.wg.Done()
+	watchdog := time.NewTimer(watchdogTimeout)
+	defer watchdog.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case msg := <-scanner.client.Listen():
+		case <-watchdog.C:
+			log.Warn().Msg("no messages received within watchdog timeout, assuming connection lost")
+			return
+		case msg, ok := <-scanner.client.Listen():
+			if !ok {
+				log.Warn().Msg("message channel closed")
+				return
+			}
+			watchdog.Reset(watchdogTimeout)
+
 			switch msg.Type {
 			case events.MessageTypeState:
 				// on reconnect
@@ -182,7 +266,7 @@ func (scanner *Scanner) listen(ctx context.Context) {
 
 					if err := scanner.sync(ctx, msg.State); err != nil {
 						log.Err(err).Msg("resync error")
-						return
+						continue
 					}
 				}
 				scanner.level = msg.State
