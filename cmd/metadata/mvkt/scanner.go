@@ -88,34 +88,42 @@ func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLeve
 		// Reset cursor for fresh sync cycle
 		scanner.lastID = 0
 
-		headLevel, err := scanner.headLevelWithRetry(ctx)
+		head, err := scanner.headWithRetry(ctx)
 		if err != nil {
 			return // context cancelled
 		}
-		log.Info().Msgf("Current head is %d. Indexer state is %d.", headLevel, scanner.level)
+		log.Info().Msgf("Current head is %d. Indexer state is %d.", head.Level, scanner.level)
 
 		// Catch up to head via REST API
-		for headLevel > scanner.level {
+		for head.Level > scanner.level {
 			select {
 			case <-ctx.Done():
 				return
 			default:
 			}
 
-			if err := scanner.sync(ctx, headLevel); err != nil {
+			if err := scanner.sync(ctx, head.Level); err != nil {
 				log.Err(err).Msg("sync")
 			}
 
-			headLevel, err = scanner.headLevelWithRetry(ctx)
+			head, err = scanner.headWithRetry(ctx)
 			if err != nil {
 				return
 			}
 		}
 
-		// Start WebSocket listener — blocks until connection is lost
-		scanner.start(ctx)
+		// Emit the head so the indexer advances its state (and freshness
+		// timestamp) even when the caught-up range contained no metadata
+		// updates. Without this the head_status view stays OUTDATED while
+		// the indexer is in fact fully synced.
+		scanner.emitHead(ctx, head)
 
-		// Listener stopped — wait then loop back to re-sync
+		// Run a single WebSocket session; it returns when the connection is
+		// lost or the watchdog fires. We then loop back to re-sync via REST
+		// before reconnecting, so a silently stalled WebSocket can never
+		// permanently freeze the indexer.
+		scanner.runWebSocket(ctx)
+
 		log.Warn().Msg("WebSocket connection lost, will re-sync and reconnect...")
 		select {
 		case <-ctx.Done():
@@ -125,94 +133,102 @@ func (scanner *Scanner) synchronization(ctx context.Context, startLevel, endLeve
 	}
 }
 
-// headLevel fetches only the head level from the API.
+// Head - minimal head representation.
 // Uses a local struct to avoid go-lib's data.Head which defines QuoteLevel
 // as uint64, incompatible with the Mavryk API returning -1.
-func (scanner *Scanner) headLevel(ctx context.Context) (uint64, error) {
+type Head struct {
+	Level     uint64    `json:"level"`
+	Hash      string    `json:"hash"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// head fetches the current head (level, hash, timestamp) from the API.
+func (scanner *Scanner) head(ctx context.Context) (Head, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, scanner.baseURL+"/v1/head", nil)
 	if err != nil {
-		return 0, err
+		return Head{}, err
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, err
+		return Head{}, err
 	}
 	defer resp.Body.Close()
 
-	var head struct {
-		Level uint64 `json:"level"`
-	}
+	var head Head
 	if err := json.NewDecoder(resp.Body).Decode(&head); err != nil {
-		return 0, err
+		return Head{}, err
 	}
-	return head.Level, nil
+	return head, nil
 }
 
-func (scanner *Scanner) headLevelWithRetry(ctx context.Context) (uint64, error) {
+func (scanner *Scanner) headWithRetry(ctx context.Context) (Head, error) {
 	for {
-		level, err := scanner.headLevel(ctx)
+		head, err := scanner.head(ctx)
 		if err == nil {
-			return level, nil
+			return head, nil
 		}
 		log.Err(err).Msg("GetHead, retrying...")
 		select {
 		case <-ctx.Done():
-			return 0, ctx.Err()
+			return Head{}, ctx.Err()
 		case <-time.After(reconnectDelay):
 		}
 	}
 }
 
-func (scanner *Scanner) start(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		client := events.NewTzKT(scanner.wsURL)
-		if err := client.Connect(ctx); err != nil {
-			log.Err(err).Msg("Connect, retrying...")
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(reconnectDelay):
-				continue
-			}
-		}
-
-		scanner.client = client
-		if err := scanner.subscribe(); err != nil {
-			log.Err(err).Msg("subscribe, retrying...")
-			if client.IsConnected() {
-				client.Close()
-			}
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(reconnectDelay):
-				continue
-			}
-		}
-
-		log.Info().Msg("WebSocket connected and subscribed")
-
-		// Block until the listener returns (connection lost or context cancelled)
-		scanner.listen(ctx)
-
-		// Clean up the old connection before reconnecting
-		if scanner.client.IsConnected() {
-			scanner.client.Close()
-		}
-
-		log.Warn().Msg("WebSocket listener stopped, reconnecting...")
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(reconnectDelay):
-		}
+// emitHead pushes the current head as a block so the indexer state advances to
+// it. Safe to call whenever the scanner has caught up to head via REST.
+func (scanner *Scanner) emitHead(ctx context.Context, head Head) {
+	if head.Level == 0 {
+		return
 	}
+	select {
+	case <-ctx.Done():
+	case scanner.blocks <- data.Block{
+		Level:     head.Level,
+		Hash:      head.Hash,
+		Timestamp: head.Timestamp.UTC(),
+	}:
+	}
+}
+
+// runWebSocket establishes a single WebSocket session and blocks until the
+// connection is lost, the watchdog fires, or the context is cancelled. It
+// returns to its caller (rather than reconnecting internally) so the caller can
+// run a REST re-sync before reconnecting — this guarantees the indexer keeps
+// advancing even if the WebSocket feed silently stalls.
+func (scanner *Scanner) runWebSocket(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
+	client := events.NewTzKT(scanner.wsURL)
+	if err := client.Connect(ctx); err != nil {
+		log.Err(err).Msg("Connect")
+		return
+	}
+	defer func() {
+		if client.IsConnected() {
+			if err := client.Close(); err != nil {
+				log.Err(err).Msg("close websocket")
+			}
+		}
+	}()
+
+	scanner.client = client
+	if err := scanner.subscribe(); err != nil {
+		log.Err(err).Msg("subscribe")
+		return
+	}
+
+	log.Info().Msg("WebSocket connected and subscribed")
+
+	// Block until the listener returns (connection lost, watchdog, or ctx).
+	scanner.listen(ctx)
+
+	log.Warn().Msg("WebSocket listener stopped")
 }
 
 // Close -

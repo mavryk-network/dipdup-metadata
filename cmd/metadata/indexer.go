@@ -240,7 +240,7 @@ func (indexer *Indexer) listen(ctx context.Context) {
 				log.Err(err).Msg("handlerUpdate")
 			}
 		case block := <-indexer.scanner.Blocks():
-			if block.Level > indexer.state.Level+1 {
+			if block.Level > indexer.state.Level {
 				indexer.state.Level = block.Level
 				indexer.state.Hash = block.Hash
 				indexer.state.Timestamp = block.Timestamp.UTC()
